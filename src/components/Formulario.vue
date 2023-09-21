@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div class="column">
-                <Temporizador @aoTemporizadorFinalizado="finalizarTarefa"/>
+                <Temporizador @aoTemporizadorFinalizado="salvarTarefa"/>
             </div>
         </div>
     </div>
@@ -22,8 +22,9 @@
 <script lang="ts">
 import { computed, defineComponent } from 'vue';
 import Temporizador from './Temporizador.vue';
-import { useStore } from 'vuex';
-import { key } from '@/store';
+import { useStore } from '@/store';
+import { NOTIFICAR } from '@/store/tipo-mutacoes';
+import { TipoNotificacao } from '@/interfaces/INotificacao';
 
 export default defineComponent({
     name: 'FormularioTracker',
@@ -38,7 +39,17 @@ export default defineComponent({
         };
     },
     methods: {
-        finalizarTarefa (tempoEmSegundos: number) : void {
+        salvarTarefa (tempoEmSegundos: number) : void {
+            const projeto = this.projetos.find((p) => p.id == this.idProjeto);
+            if(!projeto) {
+                this.store.commit(NOTIFICAR, {
+                    titulo: 'Ops!',
+                    texto: "Selecione um projeto antes de finalizar a tarefa!",
+                    tipo: TipoNotificacao.FALHA,
+                });
+                return;
+            }
+
             this.$emit('aoSalvarTarefa', {
                 duracaoEmSegundos: tempoEmSegundos,
                 descricao: this.descricao,
@@ -49,9 +60,10 @@ export default defineComponent({
         },
     },
     setup () {
-        const store = useStore(key)
+        const store = useStore();
         return {
-            projetos: computed(() => store.state.projetos)
+            projetos: computed(() => store.state.projetos),
+            store
         }
     },
 })
